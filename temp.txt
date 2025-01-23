@@ -1,0 +1,77 @@
+const keyCodeToChar = {
+    [UiohookKey.A]: { normal: 'a', shift: 'A' },
+        [UiohookKey.B]: { normal: 'b', shift: 'B' },
+        [UiohookKey.C]: { normal: 'c', shift: 'C' },
+        [UiohookKey.D]: { normal: 'd', shift: 'D' },
+        [UiohookKey.E]: { normal: 'e', shift: 'E' },
+        [UiohookKey.F]: { normal: 'f', shift: 'F' },
+        [UiohookKey.G]: { normal: 'g', shift: 'G' },
+        [UiohookKey.H]: { normal: 'h', shift: 'H' },
+        [UiohookKey.I]: { normal: 'i', shift: 'I' },
+        [UiohookKey.J]: { normal: 'j', shift: 'J' },
+        [UiohookKey.K]: { normal: 'k', shift: 'K' },
+        [UiohookKey.L]: { normal: 'l', shift: 'L' },
+        [UiohookKey.M]: { normal: 'm', shift: 'M' },
+        [UiohookKey.N]: { normal: 'n', shift: 'N' },
+        [UiohookKey.O]: { normal: 'o', shift: 'O' },
+        [UiohookKey.P]: { normal: 'p', shift: 'P' },
+        [UiohookKey.Q]: { normal: 'q', shift: 'Q' },
+        [UiohookKey.R]: { normal: 'r', shift: 'R' },
+        [UiohookKey.S]: { normal: 's', shift: 'S' },
+        [UiohookKey.T]: { normal: 't', shift: 'T' },
+        [UiohookKey.U]: { normal: 'u', shift: 'U' },
+        [UiohookKey.V]: { normal: 'v', shift: 'V' },
+        [UiohookKey.W]: { normal: 'w', shift: 'W' },
+        [UiohookKey.X]: { normal: 'x', shift: 'X' },
+        [UiohookKey.Y]: { normal: 'y', shift: 'Y' },
+        [UiohookKey.Z]: { normal: 'z', shift: 'Z' },
+    
+        [2]: { normal: '1', shift: '!' },
+        [3]: { normal: '2', shift: '@' },
+        [4]: { normal: '3', shift: '#' },
+        [5]: { normal: '4', shift: '$' },
+        [6]: { normal: '5', shift: '%' },
+        [7]: { normal: '6', shift: '^' },
+        [8]: { normal: '7', shift: '&' },
+        [9]: { normal: '8', shift: '*' },
+        [10]: { normal: '9', shift: '(' },
+        [11]: { normal: '0', shift: ')' },
+        [12]: { normal: '-', shift: '_' },
+        [13]: { normal: '=', shift: '+' },
+    
+        [26]: { normal: '[', shift: '{' },
+        [27]: { normal: ']', shift: '}' },
+        [43]: { normal: '\\', shift: '|' },
+    
+        [39]: { normal: ';', shift: ':' },
+        [40]: { normal: '\'', shift: '"' },
+        [51]: { normal: ',', shift: '<' },
+        [52]: { normal: '.', shift: '>' },
+        [53]: { normal: '/', shift: '?' },
+        [57]: { normal: ' ', shift: ' ' },
+        [28]: { normal: '\n', shift: '\n' },
+    
+    // Special keys
+    [14]: { normal: '\b', shift: '\b' }, // Backspace
+    [57]: { normal: ' ', shift: ' ' },   // Space
+    [28]: { normal: '\n', shift: '\n' }, // Enter
+
+    // Numpad keys
+    [82]: { normal: '0' },
+    [79]: { normal: '1' },
+    [80]: { normal: '2' },
+    [81]: { normal: '3' },
+    [75]: { normal: '4' },
+    [76]: { normal: '5' },
+    [77]: { normal: '6' },
+    [71]: { normal: '7' },
+    [72]: { normal: '8' },
+    [73]: { normal: '9' },
+
+    // Special symbols (/ * - + .)
+    [3637]: { normal: '/' }, // /
+    [55]: { normal: '*' },   // *
+    [74]: { normal: '-' },   // -
+    [78]: { normal: '+' },   // +
+    [83]: { normal: '.' },   // .
+};
